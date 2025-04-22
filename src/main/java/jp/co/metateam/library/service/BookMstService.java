@@ -19,12 +19,12 @@ import jp.co.metateam.library.repository.BookMstRepository;
 public class BookMstService {
 
     private final BookMstRepository bookMstRepository;
-    
+
     @Autowired
-    public BookMstService(BookMstRepository bookMstRepository){
+    public BookMstService(BookMstRepository bookMstRepository) {
         this.bookMstRepository = bookMstRepository;
     }
-    
+
     public List<BookMstDto> findAvailableWithStockCount() {
         List<BookMst> books = this.bookMstRepository.findLimitedBook();
         List<BookMstDto> bookMstDtoList = new ArrayList<BookMstDto>();
@@ -42,8 +42,65 @@ public class BookMstService {
 
         return bookMstDtoList;
     }
+
+    public boolean validation (BookMstDto bookMstDto, Model model){
+        // ユーザーが入力した書籍ISBNと書籍名を取得
+        String inputBookId = bookMstDto.getIsbn();
+        String inputBookName = bookMstDto.getTitle();
+
+        boolean errBookNameFlg = false;
+        boolean errBookIsbnFlg = false;
+        boolean errBookNameLengthFlg = false;
+        boolean errBookIsbnLengthFlg = false;
+        boolean errBookIsbnPatternFlg = false;
+
+
+        if (inputBookId == null || inputBookId.trim().isEmpty()) {
+            errBookIsbnFlg = true;  // 入力なしエラー
+            model.addAttribute("errorIsbn","ISBNは必須です。");
+        } else {
+            String trimmed = inputBookId.trim();
+        
+            if (trimmed.length() != 13) {
+                errBookIsbnLengthFlg = true;  // 13桁じゃない
+                model.addAttribute("errorIsbn","ISBNは13桁で入力してください。");
+            }
+        
+            if (!trimmed.matches("^[0-9]+$")) {
+                errBookIsbnPatternFlg = true;  // 半角数字じゃない
+                model.addAttribute("errorIsbn","ISBNは半角数字で入力してください。");
+            }
+        }
+        
+        if (inputBookName == null || inputBookName.trim().isEmpty()){
+            errBookNameFlg = true;//入力なしエラー
+            model.addAttribute("errorTitle","書籍名は必須です。");
+        }else if(inputBookName.length() > 255){
+            errBookNameLengthFlg = true;//255文字以内じゃない
+            model.addAttribute("errorTitle","書籍名は255文字以内で入力してください。");
+        }
+
+
+        // エラーフラグのチェック
+        if (errBookIsbnFlg || errBookNameFlg || errBookNameLengthFlg || errBookIsbnLengthFlg || errBookIsbnPatternFlg) {
+            return true;
+        }
+        
+        
+        
+        return false;
+
+    }
+
+    public int selectByIsbn(BookMstDto bookMstDto){
+        int isbnlExist = this.bookMstRepository.selectByIsbn(bookMstDto.getIsbn());
+        return isbnlExist;
+    }
     
+
+    public void save(BookMst bk) {
+        this.bookMstRepository.save(bk);
+
+    }
+
 }
-
-
-
